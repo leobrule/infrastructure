@@ -14,8 +14,9 @@ mysql = {
   database_version = "MYSQL_8_4"
   edition          = "ENTERPRISE"
 
-  # Cheapest possible: shared-core, zonal, 10 GB HDD, no autoresize.
-  tier              = "db-f1-micro"
+  # 2 dedicated vCPUs, 7.5 GB RAM (was db-f1-micro: shared core, 0.6 GB).
+  # Zonal, 10 GB HDD, no autoresize.
+  tier              = "db-custom-2-7680"
   availability_type = "ZONAL"
   disk_type         = "PD_HDD"
   disk_size_gb      = 10
