@@ -1,0 +1,117 @@
+name: terraform-plan
+
+# Runs on every PR to main and posts the plan as a PR comment.
+# No path filter on purpose: "terraform-plan" is a required status check, and a
+# required check that never runs would block PRs that don't touch Terraform.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write       # OIDC token for Workload Identity Federation
+  pull-requests: write  # post the plan comment
+
+concurrency:
+  group: terraform-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  TF_VERSION: "~1.16.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  WORKDIR: terraform/envs/dev
+  VAR_FILE: dev.tfvars
+
+jobs:
+  plan:
+    name: terraform-plan
+    runs-on: ubuntu-latest
+    # PRs from forks get no OIDC token; never run cloud credentials for them.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive -diff terraform
+
+      - name: tflint
+        run: |
+          curl -sSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          tflint --init --config "$GITHUB_WORKSPACE/.tflint.hcl"
+          tflint --chdir=terraform --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl"
+
+      - name: checkov (security scan, report only)
+        run: |
+          pipx install checkov
+          checkov -d terraform --framework terraform --compact --quiet --soft-fail
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_EMAIL }}
+
+      - name: terraform init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init -lockfile=readonly
+
+      - name: terraform validate
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform validate -no-color
+
+      - name: terraform plan
+        id: plan
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          set -o pipefail
+          terraform plan -var-file="$VAR_FILE" -lock-timeout=5m -no-color -out=tfplan | tee plan.log
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Comment plan on PR
+        if: always() && steps.plan.outcome != 'skipped'
+        uses: actions/github-script@v8
+        env:
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const dir = process.env.WORKDIR;
+            let body = '';
+            for (const f of [`${dir}/plan.txt`, `${dir}/plan.log`]) {
+              if (fs.existsSync(f)) { body = fs.readFileSync(f, 'utf8'); break; }
+            }
+            const max = 60000;
+            if (body.length > max) body = body.slice(0, max) + '\n... (truncated, see the job log)';
+            const summary = (body.match(/Plan: .*|No changes\..*/) || ['(no summary)'])[0];
+            const marker = '<!-- terraform-plan:dev -->';
+            const icon = process.env.PLAN_OUTCOME === 'success' ? '✅' : '❌';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const text = [
+              marker,
+              `### Terraform plan — \`dev\` — ${icon} ${summary}`,
+              '',
+              '<details><summary>Show plan</summary>',
+              '',
+              '```terraform',
+              body,
+              '```',
+              '</details>',
+              '',
+              `Commit ${context.payload.pull_request.head.sha.substring(0, 7)} · [run](${runUrl})`,
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number, per_page: 100,
+            });
+            const old = comments.find(c => c.body && c.body.includes(marker));
+            if (old) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: old.id, body: text });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body: text });
+            }

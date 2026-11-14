@@ -1,0 +1,63 @@
+name: terraform-apply
+
+# Runs after a PR is merged into main. Waits for approval on the "dev"
+# environment (Settings > Environments > dev > Required reviewers), then
+# re-plans against the current state and applies exactly that plan.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+# Never run two applies against the same state at once.
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: "~1.16.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  WORKDIR: terraform/envs/dev
+  VAR_FILE: dev.tfvars
+
+jobs:
+  apply:
+    name: terraform-apply
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_EMAIL }}
+
+      - name: terraform init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init -lockfile=readonly
+
+      - name: terraform plan
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform plan -var-file="$VAR_FILE" -lock-timeout=5m -no-color -out=tfplan
+
+      - name: terraform apply
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform apply -lock-timeout=5m -no-color tfplan
+
+      - name: Outputs
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform output -no-color

@@ -1,0 +1,54 @@
+name: terraform-destroy
+
+# Manual only: Actions > terraform-destroy > Run workflow, type "destroy".
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to delete the dev Cloud SQL instance and its secrets'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: "~1.16.0"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  WORKDIR: terraform/envs/dev
+  VAR_FILE: dev.tfvars
+
+jobs:
+  destroy:
+    name: terraform-destroy
+    runs-on: ubuntu-latest
+    environment: dev
+    if: inputs.confirm == 'destroy'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_EMAIL }}
+
+      - name: terraform init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init -lockfile=readonly
+
+      - name: terraform destroy
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform destroy -var-file="$VAR_FILE" -lock-timeout=5m -no-color -auto-approve

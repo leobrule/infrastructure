@@ -1,0 +1,11 @@
+# Local hooks only, so nothing needs pinning. Install once per clone:
+#   pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: terraform-fmt
+        name: terraform fmt
+        entry: terraform fmt -recursive terraform bootstrap
+        language: system
+        pass_filenames: false
+        files: \.(tf|tfvars)$

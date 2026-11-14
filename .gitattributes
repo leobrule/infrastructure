@@ -1,0 +1,3 @@
+# Keep LF line endings in the repo even when committing from Windows,
+# so terraform fmt -check gives the same result on the laptop and the runner.
+* text=auto eol=lf
