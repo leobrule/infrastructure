@@ -43,7 +43,9 @@ jobs:
 
       - name: tflint
         run: |
-          curl -sSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          curl -fsSL -o /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_amd64.zip
+          sudo unzip -o -q /tmp/tflint.zip -d /usr/local/bin
+          tflint --version
           tflint --init --config "$GITHUB_WORKSPACE/.tflint.hcl"
           tflint --chdir=terraform --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl"
 
