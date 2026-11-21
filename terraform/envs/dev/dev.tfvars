@@ -14,9 +14,9 @@ mysql = {
   database_version = "MYSQL_8_4"
   edition          = "ENTERPRISE"
 
-  # 2 dedicated vCPUs, 7.5 GB RAM (was db-f1-micro: shared core, 0.6 GB).
-  # Zonal, 10 GB HDD, no autoresize.
-  tier              = "db-custom-2-7680"
+  # Shared core, 0.6 GB RAM (~9-14 USD/month). Was db-custom-2-7680
+  # (2 vCPU, 7.5 GB, ~99 USD/month). Zonal, 10 GB HDD, no autoresize.
+  tier              = "db-f1-micro"
   availability_type = "ZONAL"
   disk_type         = "PD_HDD"
   disk_size_gb      = 10
