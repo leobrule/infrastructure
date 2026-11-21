@@ -21,11 +21,18 @@ Template:
 
 - Done: PR #2 merged (no apply: `terraform-apply` only runs on `terraform/**`).
   `dev.tfvars` tier `db-custom-2-7680` → `db-f1-micro`.
-- PRs: `dev: set mysql-dev tier to db-f1-micro` — open
-- Plan result: 9 to add, 0 to change, 0 to destroy (`mysql-dev` was destroyed
-  earlier, so merging + approving `dev` recreates it at the small tier).
-- Cost impact: ~9–14 USD/month if applied (vs ~99 USD/month at the old tier).
-- Open: decide whether to approve the `dev` deployment after merge.
+- PRs: #3 `dev: set mysql-dev tier to db-f1-micro` — merged and applied.
+- Plan result: 9 to add, 0 to change, 0 to destroy (`mysql-dev` recreated at
+  `db-f1-micro`).
+- Issue: the apply ran **without waiting for approval**: the `dev` environment
+  had no protection rules (required reviewer missing). Fixed: Leo set as
+  required reviewer on `dev` (self-review allowed; admin bypass and
+  any-branch deploy left as they were).
+- Then: `terraform-destroy` run (approved by Leo through the restored gate);
+  `gcloud sql instances list` shows 0 instances.
+- Cost impact: a few cents (instance up ~15 min); now none.
+- Open: consider turning off admin bypass on `dev` and limiting deploys to
+  `main`; Phase 6 (Ansible) postponed.
 
 ## 2026-11-21 — Phase 3 — bootstrap state migrated to GCS
 
@@ -35,12 +42,11 @@ Template:
   `gs://mysqlproject-501213-tfstate/bootstrap/default.tfstate` (16 resources).
   `terraform plan` in bootstrap: No changes. Old local `terraform.tfstate*`
   moved to Downloads (`bootstrap-terraform.tfstate*`).
-- PRs: `bootstrap: store state in GCS (prefix bootstrap)` — open
+- PRs: #2 `bootstrap: store state in GCS (prefix bootstrap)` — merged
   (also adds `CLAUDE.md`, this log, `docs/runbook-powershell.md`).
 - Plan result: bootstrap 0/0/0; pipeline plan for `envs/dev` see PR comment.
 - Cost impact: none (one small object in the existing bucket).
-- Open: merge the PR; delete the Downloads backups once comfortable;
-  Phase 6 (Ansible) postponed.
+- Open: delete the Downloads backups once comfortable.
 
 ## 2026-11-21 — Phase 3 — main protected, docs for Claude Code
 
