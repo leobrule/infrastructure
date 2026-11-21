@@ -17,6 +17,16 @@ Template:
 
 ---
 
+## 2026-11-21 — Phase 5 — dev tier back to db-f1-micro
+
+- Done: PR #2 merged (no apply: `terraform-apply` only runs on `terraform/**`).
+  `dev.tfvars` tier `db-custom-2-7680` → `db-f1-micro`.
+- PRs: `dev: set mysql-dev tier to db-f1-micro` — open
+- Plan result: 9 to add, 0 to change, 0 to destroy (`mysql-dev` was destroyed
+  earlier, so merging + approving `dev` recreates it at the small tier).
+- Cost impact: ~9–14 USD/month if applied (vs ~99 USD/month at the old tier).
+- Open: decide whether to approve the `dev` deployment after merge.
+
 ## 2026-11-21 — Phase 3 — bootstrap state migrated to GCS
 
 - Done: backed up `bootstrap/terraform.tfstate` to
