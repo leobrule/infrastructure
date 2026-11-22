@@ -94,12 +94,13 @@ If it isn't found, use the full path: `& "C:\Program Files\Oracle\VirtualBox\VBo
 
 | VirtualBox name | Role in this project | Notes |
 | --- | --- | --- |
-| `UbuntuTerraformAnsible` | **srv-iac**: Ubuntu 26.04, runs Ansible (Phases 6–7) | Terraform, gcloud, gh, Ansible installed |
-| `UbuntuPostgreSQL` | Not part of the plan yet | Leo's own lab VM |
-| `UbuntuMySQL` | Not part of the plan yet | Leo's own lab VM |
-| `Win22MongoDB` | Not part of the plan yet | Leo's own lab VM |
+| `UbuntuTerraformAnsible` | **srv-iac**: Ubuntu 26.04, runs Ansible (Phases 6–7) | Terraform, gcloud, gh, Ansible installed. SSH: `ssh srv-iac` |
+| `UbuntuPostgreSQL` | **srv-mon**: monitoring VM with the Postgres metrics repository (Phase 9) | SSH: `ssh srv-mon` |
+| `UbuntuMySQL` | Not part of the plan | Leo's own lab VM |
+| `Win22MongoDB` | Not part of the plan | Leo's own lab VM |
 
-srv-mon (monitoring VM, Phase 9) doesn't exist yet. Add it here when it's created.
+Both hostnames resolve through the Windows hosts file
+(`C:\Windows\System32\drivers\etc\hosts`). Use the hostname, never a hard-coded IP.
 
 ```powershell
 VBoxManage list vms                                         # all VMs
@@ -110,13 +111,15 @@ VBoxManage showvminfo "UbuntuTerraformAnsible" --machinereadable | Select-String
 ```
 
 Rules for VMs:
-- Start or stop a VM only when Leo asks. Never touch the three lab VMs unless he names them.
+- Start or stop a VM only when Leo asks. Never touch the two lab VMs (`UbuntuMySQL`, `Win22MongoDB`) unless he names them.
 - Shut down with `acpipowerbutton` (clean). Use `controlvm <name> poweroff` only if
   Leo agrees, after a clean shutdown hasn't worked within 2 minutes.
 - Never delete, unregister, snapshot-restore or reconfigure a VM (`unregistervm`,
   `modifyvm`, `snapshot ... restore`) without Leo's explicit request.
-- After starting a VM, wait until it answers on SSH before running anything on it.
-  SSH host and user for srv-iac aren't recorded here yet; ask Leo and add them.
+- After starting a VM, wait until it answers on SSH before running anything on it:
+  `ssh -o ConnectTimeout=5 srv-iac "uptime"` (retry every 15 s, give up after 3 minutes and tell Leo).
+- On the VMs, only run what the task needs. No package upgrades, reboots or service
+  changes unless Leo asks.
 
 ## End of every session
 
