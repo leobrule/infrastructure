@@ -87,6 +87,37 @@ terraform providers lock -platform=windows_amd64 -platform=linux_amd64
   "An Application Control policy has blocked this file", stop and tell Leo;
   do not try to work around it. srv-iac (Ubuntu VM) is the fallback.
 
+## VMs (Oracle VirtualBox on the laptop)
+
+`VBoxManage` is on Leo's user PATH (`C:\Program Files\Oracle\VirtualBox`).
+If it isn't found, use the full path: `& "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"`.
+
+| VirtualBox name | Role in this project | Notes |
+| --- | --- | --- |
+| `UbuntuTerraformAnsible` | **srv-iac**: Ubuntu 26.04, runs Ansible (Phases 6–7) | Terraform, gcloud, gh, Ansible installed |
+| `UbuntuPostgreSQL` | Not part of the plan yet | Leo's own lab VM |
+| `UbuntuMySQL` | Not part of the plan yet | Leo's own lab VM |
+| `Win22MongoDB` | Not part of the plan yet | Leo's own lab VM |
+
+srv-mon (monitoring VM, Phase 9) doesn't exist yet. Add it here when it's created.
+
+```powershell
+VBoxManage list vms                                         # all VMs
+VBoxManage list runningvms                                  # running now
+VBoxManage startvm "UbuntuTerraformAnsible" --type headless # start, no window
+VBoxManage controlvm "UbuntuTerraformAnsible" acpipowerbutton  # clean shutdown
+VBoxManage showvminfo "UbuntuTerraformAnsible" --machinereadable | Select-String VMState
+```
+
+Rules for VMs:
+- Start or stop a VM only when Leo asks. Never touch the three lab VMs unless he names them.
+- Shut down with `acpipowerbutton` (clean). Use `controlvm <name> poweroff` only if
+  Leo agrees, after a clean shutdown hasn't worked within 2 minutes.
+- Never delete, unregister, snapshot-restore or reconfigure a VM (`unregistervm`,
+  `modifyvm`, `snapshot ... restore`) without Leo's explicit request.
+- After starting a VM, wait until it answers on SSH before running anything on it.
+  SSH host and user for srv-iac aren't recorded here yet; ask Leo and add them.
+
 ## End of every session
 
 Add an entry at the top of `docs/session-log.md` (date, phase, what was done,
