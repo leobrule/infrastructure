@@ -1,0 +1,19 @@
+---
+# Ansible runs on srv-iac and talks to Cloud SQL over the MySQL protocol.
+# Cloud SQL has no SSH, so the "host" is srv-iac itself (localhost), and the
+# MySQL modules connect to the Cloud SQL Auth Proxy listening on 127.0.0.1.
+all:
+  children:
+    cloudsql_mysql:
+      hosts:
+        mysql-dev:
+          ansible_connection: local
+          ansible_python_interpreter: /usr/bin/python3
+          gcp_project: mysqlproject-501213
+          # Must match the terraform output mysql_connection_name.
+          cloudsql_connection_name: mysqlproject-501213:europe-west1:mysql-dev
+          mysql_proxy_host: 127.0.0.1
+          mysql_proxy_port: 3306
+          # Created by Terraform (module cloudsql-mysql).
+          mysql_admin_user: dbadmin
+          mysql_admin_password_secret: mysql-dev-dbadmin-password

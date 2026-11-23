@@ -1,0 +1,113 @@
+---
+- name: Check that the Cloud SQL Auth Proxy is listening
+  ansible.builtin.wait_for:
+    host: "{{ mysql_proxy_host }}"
+    port: "{{ mysql_proxy_port }}"
+    timeout: 10
+  register: mysql_app_db_proxy_check
+  ignore_errors: true
+  check_mode: false
+
+- name: Stop if the proxy is not running
+  ansible.builtin.fail:
+    msg: >-
+      Nothing is listening on {{ mysql_proxy_host }}:{{ mysql_proxy_port }}.
+      Start the proxy in another terminal first:
+      cloud-sql-proxy {{ cloudsql_connection_name }} --port {{ mysql_proxy_port }}
+  when: mysql_app_db_proxy_check is failed
+
+- name: Read the dbadmin password from Secret Manager
+  ansible.builtin.command:
+    cmd: >-
+      gcloud secrets versions access latest
+      --secret={{ mysql_admin_password_secret }}
+      --project={{ gcp_project }}
+  register: mysql_app_db_admin_secret
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Set the admin login used by every MySQL task below
+  ansible.builtin.set_fact:
+    mysql_app_db_login:
+      login_host: "{{ mysql_proxy_host }}"
+      login_port: "{{ mysql_proxy_port }}"
+      login_user: "{{ mysql_admin_user }}"
+      login_password: "{{ mysql_app_db_admin_secret.stdout }}"
+  no_log: true
+
+- name: Check the connection (server version)
+  ansible.mysql.mysql_info:
+    login_host: "{{ mysql_app_db_login.login_host }}"
+    login_port: "{{ mysql_app_db_login.login_port }}"
+    login_user: "{{ mysql_app_db_login.login_user }}"
+    login_password: "{{ mysql_app_db_login.login_password }}"
+    filter: version
+  register: mysql_app_db_server
+
+- name: Show the server version
+  ansible.builtin.debug:
+    msg: "Connected through the Auth Proxy to MySQL {{ mysql_app_db_server.version.full }}"
+
+- name: Create the databases
+  ansible.mysql.mysql_db:
+    login_host: "{{ mysql_app_db_login.login_host }}"
+    login_port: "{{ mysql_app_db_login.login_port }}"
+    login_user: "{{ mysql_app_db_login.login_user }}"
+    login_password: "{{ mysql_app_db_login.login_password }}"
+    name: "{{ item.name }}"
+    encoding: "{{ item.encoding | default(mysql_app_db_encoding) }}"
+    collation: "{{ item.collation | default(mysql_app_db_collation) }}"
+    state: present
+  loop: "{{ mysql_app_db_databases }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Create or read each user's password secret
+  ansible.builtin.include_tasks: user_secret.yml
+  loop: "{{ mysql_app_db_users }}"
+  loop_control:
+    loop_var: mysql_app_db_user
+    label: "{{ mysql_app_db_user.name }}"
+
+- name: Create the users and grant access to their database
+  ansible.mysql.mysql_user:
+    login_host: "{{ mysql_app_db_login.login_host }}"
+    login_port: "{{ mysql_app_db_login.login_port }}"
+    login_user: "{{ mysql_app_db_login.login_user }}"
+    login_password: "{{ mysql_app_db_login.login_password }}"
+    name: "{{ item.name }}"
+    host: "{{ mysql_app_db_user_host }}"
+    password: "{{ mysql_app_db_passwords[item.name] }}"
+    update_password: on_create
+    priv: "{{ item.database }}.*:{{ mysql_app_db_privilege_sets[item.access] }}"
+    state: present
+  loop: "{{ mysql_app_db_users }}"
+  loop_control:
+    label: "{{ item.name }} -> {{ item.database }} ({{ item.access }})"
+  no_log: true
+
+- name: Read back the grants
+  ansible.mysql.mysql_query:
+    login_host: "{{ mysql_app_db_login.login_host }}"
+    login_port: "{{ mysql_app_db_login.login_port }}"
+    login_user: "{{ mysql_app_db_login.login_user }}"
+    login_password: "{{ mysql_app_db_login.login_password }}"
+    query: "SHOW GRANTS FOR %s@%s"
+    positional_args:
+      - "{{ item.name }}"
+      - "{{ mysql_app_db_user_host }}"
+  loop: "{{ mysql_app_db_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: mysql_app_db_grants
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Show the grants
+  ansible.builtin.debug:
+    msg: "{{ item.query_result[0] | map('dict2items') | map('first') | map(attribute='value') | list }}"
+  loop: "{{ mysql_app_db_grants.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not ansible_check_mode

@@ -1,0 +1,10 @@
+---
+# Creates the application databases and users inside Cloud SQL mysql-dev.
+# Run from srv-iac, in the ansible/ folder, with the Auth Proxy running:
+#   ansible-playbook playbooks/mysql-app-db.yml --check --diff   # dry run
+#   ansible-playbook playbooks/mysql-app-db.yml                  # apply
+- name: Application databases and users in Cloud SQL MySQL
+  hosts: cloudsql_mysql
+  gather_facts: false
+  roles:
+    - mysql_app_db

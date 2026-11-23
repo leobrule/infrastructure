@@ -1,0 +1,19 @@
+---
+mysql_app_db_databases: []
+mysql_app_db_users: []
+
+mysql_app_db_encoding: utf8mb4
+mysql_app_db_collation: utf8mb4_0900_ai_ci
+
+# Host part of the MySQL account. Through the Auth Proxy connections arrive
+# from Google's side, so '%' is the usual choice for Cloud SQL users.
+mysql_app_db_user_host: "%"
+
+mysql_app_db_privilege_sets:
+  admin: "ALL PRIVILEGES"
+  write: "SELECT,INSERT,UPDATE,DELETE,EXECUTE,CREATE TEMPORARY TABLES"
+  read: "SELECT"
+
+# Each app user's password lives in Secret Manager under
+# <instance>-<user>-password, like the Terraform-managed ones.
+mysql_app_db_secret_prefix: "{{ inventory_hostname }}"
