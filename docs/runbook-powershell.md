@@ -64,15 +64,33 @@ gcloud secrets versions access latest --secret=mysql-dev-dbadmin-password
 mysql -h 127.0.0.1 -P 3306 -u dbadmin -p
 ```
 
-## Recreate or destroy the instance
+## Turn the instance on or off
+
+The usual way is the switch in `terraform\envs\dev\dev.tfvars`, through a PR:
+
+```hcl
+mysql_enabled = true    # on: creates mysql-dev (about 10 min after you approve dev)
+mysql_enabled = false   # off: DESTROYS mysql-dev and its data
+```
+
+Branch, edit, PR, read the plan (on: `9 to add`; off: `0 to add, 0 to change, 9 to destroy`),
+merge, approve `dev`. Afterwards, rerun the Ansible playbook to recreate `appdb` and its users.
+
+To pause without losing data, keep `mysql_enabled = true` and set
+`activation_policy = "NEVER"` (instance stopped; you still pay for the 10 GB disk).
+
+The manual workflows still work, for emergencies:
 
 ```powershell
-gh workflow run terraform-apply.yml                       # recreate from main
-gh workflow run terraform-destroy.yml -f confirm=destroy  # destroy
+gh workflow run terraform-apply.yml                       # apply main as it is
+gh workflow run terraform-destroy.yml -f confirm=destroy  # destroy, whatever main says
 gh run view --web                                         # approve dev in both cases
 ```
 
-The name `mysql-dev` can't be reused for about a week after a destroy.
+After a manual destroy, `main` still says `mysql_enabled = true`, so the next
+merge that touches `terraform/` recreates the instance. Prefer the switch.
+
+The name `mysql-dev` can't be reused for up to a week after it is deleted.
 
 ## Bootstrap (rare, local only)
 
