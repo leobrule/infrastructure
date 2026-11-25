@@ -10,6 +10,12 @@ variable "environment" {
   type = string
 }
 
+variable "mysql_enabled" {
+  description = "On/off switch for the Cloud SQL instance. false destroys it and its data; true creates it."
+  type        = bool
+  default     = true
+}
+
 variable "mysql" {
   description = "Cloud SQL MySQL settings. Change them in dev.tfvars through a pull request."
   type = object({

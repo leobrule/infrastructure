@@ -59,7 +59,8 @@ Secret Manager Secret Accessor (read passwords) and Secret Manager Admin
 ## Run it
 
 1. `mysql-dev` must be running. If it was destroyed, deploy it again through a
-   PR (`activation_policy = "ALWAYS"` in `dev.tfvars`), merge, approve `dev`.
+   PR (`mysql_enabled = true` and `activation_policy = "ALWAYS"` in `dev.tfvars`),
+   merge, approve `dev`.
 2. Terminal 1 on srv-iac — start the proxy and leave it running:
    ```bash
    cloud-sql-proxy mysqlproject-501213:europe-west1:mysql-dev --port 3306

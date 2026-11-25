@@ -17,6 +17,24 @@ Template:
 
 ---
 
+## 2026-11-25 — Phases 4–5 — mysql_enabled on/off switch
+
+- Done: `mysql_enabled` variable in `envs/dev` (default `true`); the module
+  call has `count = var.mysql_enabled ? 1 : 0`, a `moved` block
+  (`module.mysql` → `module.mysql[0]`) so a running instance is kept, and
+  outputs use `one(module.mysql[*].…)` (null when off). Set `true` in
+  `dev.tfvars`, so merging recreates `mysql-dev`. Runbook updated (switch is
+  now the usual on/off; manual workflows kept for emergencies).
+- PRs: #6 `ansible: create appdb with admin and read-write users` merged by
+  Leo; `dev: add mysql_enabled on/off switch` (open).
+- Plan result: 9 to add, 0 to change, 0 to destroy (instance absent since
+  the 2026-11-21 destroy).
+- Cost impact: `db-f1-micro` ≈ 9–14 USD/month while on; turn off after sessions.
+- Risk: Cloud SQL blocks reusing a deleted instance name for up to a week
+  (last destroy 2026-11-21 23:40 UTC). If the apply fails on the name, wait
+  and rerun `terraform-apply`.
+- Open: after the apply, run the Ansible playbook from srv-iac (Auth Proxy check).
+
 ## 2026-11-23 — Phase 6 — first Ansible playbook: appdb and its users
 
 - Done: `ansible/` scaffold (ansible.cfg, inventory for `mysql-dev`, role

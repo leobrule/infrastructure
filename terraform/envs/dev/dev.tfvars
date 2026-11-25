@@ -9,6 +9,12 @@ project_id  = "mysqlproject-501213"
 region      = "europe-west1"
 environment = "dev"
 
+# On/off switch. false: Terraform DESTROYS mysql-dev and its data (Ansible can
+# recreate appdb and its users afterwards). true: Terraform creates it again.
+# For a pause that keeps the data, leave this true and set
+# activation_policy = "NEVER" instead (you still pay for the disk).
+mysql_enabled = true
+
 mysql = {
   name             = "mysql-dev"
   database_version = "MYSQL_8_4"

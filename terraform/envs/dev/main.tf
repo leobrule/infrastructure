@@ -1,5 +1,7 @@
+# mysql_enabled = false removes the instance (and its data); true creates it.
 module "mysql" {
   source = "../../modules/cloudsql-mysql"
+  count  = var.mysql_enabled ? 1 : 0
 
   project_id = var.project_id
   region     = var.region
@@ -31,4 +33,11 @@ module "mysql" {
     managed_by = "terraform"
     repo       = "infrastructure"
   }
+}
+
+# The module used to have no count. Keeps an existing instance in place
+# (no destroy and recreate) when this change is applied to a running one.
+moved {
+  from = module.mysql
+  to   = module.mysql[0]
 }
