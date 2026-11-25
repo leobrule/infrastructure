@@ -17,6 +17,21 @@ Template:
 
 ---
 
+## 2026-11-25 (later) — Phase 5 — mysql-dev turned off with the switch
+
+- Done: PR #7 merged and applied (9 added, `mysql-dev` RUNNABLE, MySQL 8.4,
+  databases: `training` only). Then `mysql_enabled = false` in `dev.tfvars`
+  to turn it off again. The Ansible playbook was not run on this instance
+  (no `appdb` yet, no appdb secrets in Secret Manager).
+- PRs: #7 `dev: add mysql_enabled on/off switch` (merged);
+  `dev: turn mysql-dev off` (open).
+- Plan result: 0 to add, 0 to change, 9 to destroy (instance, `dbadmin`,
+  `training`, 2 secrets, 2 versions, 2 random_password). Nothing replaced.
+- Cost impact: −9–14 USD/month (back to about 0).
+- Open: turning it back on within about a week may fail on the reused name
+  `mysql-dev`. Ansible run against Cloud SQL still to do. Learned: the
+  pipeline never runs Ansible; Terraform owns `training`, Ansible owns `appdb`.
+
 ## 2026-11-25 — Phases 4–5 — mysql_enabled on/off switch
 
 - Done: `mysql_enabled` variable in `envs/dev` (default `true`); the module
