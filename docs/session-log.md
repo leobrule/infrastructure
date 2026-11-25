@@ -17,6 +17,24 @@ Template:
 
 ---
 
+## 2026-11-23 — Phase 6 — first Ansible playbook: appdb and its users
+
+- Done: `ansible/` scaffold (ansible.cfg, inventory for `mysql-dev`, role
+  `mysql_app_db`, playbook `mysql-app-db.yml`, README). Creates database
+  `appdb`, user `appdb_admin` (ALL on `appdb.*`) and `appdb_rw` (DML on
+  `appdb.*`); passwords generated once and stored in Secret Manager
+  (`mysql-dev-appdb_admin-password`, `mysql-dev-appdb_rw-password`).
+  Uses the `ansible.mysql` collection (`community.mysql` is deprecated).
+- Tested in a sandbox against MySQL 8.0 with a stand-in for gcloud: dry run,
+  first run (changed=4), rerun (changed=0), grants checked, `appdb_rw` can't
+  CREATE TABLE, `appdb_admin` can. ansible-lint: production profile passes.
+  Not yet run against Cloud SQL.
+- PRs: `ansible: create appdb with admin and read-write users` (open).
+- Plan result: no Terraform change (0/0/0 expected).
+- Cost impact: none; 2 Secret Manager secrets (well under 0.01 USD/month).
+- Open: deploy `mysql-dev`, start the Auth Proxy on srv-iac, run the playbook
+  (also closes the Auth Proxy check). `mysql_enabled` switch still to do.
+
 ## 2026-11-21 — Phase 5 — dev tier back to db-f1-micro
 
 - Done: PR #2 merged (no apply: `terraform-apply` only runs on `terraform/**`).

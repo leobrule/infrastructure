@@ -1,0 +1,20 @@
+---
+# Databases and users that Ansible manages inside the Cloud SQL instance.
+# Terraform owns the instance, the "training" database and the dbadmin user;
+# Ansible owns everything listed here. Don't list the same database in both.
+#
+# access levels (see roles/mysql_app_db/defaults/main.yml):
+#   admin = ALL PRIVILEGES on that database (create/alter/drop tables, DML)
+#   write = SELECT, INSERT, UPDATE, DELETE, EXECUTE, CREATE TEMPORARY TABLES
+#   read  = SELECT
+
+mysql_app_db_databases:
+  - name: appdb
+
+mysql_app_db_users:
+  - name: appdb_admin
+    database: appdb
+    access: admin
+  - name: appdb_rw
+    database: appdb
+    access: write

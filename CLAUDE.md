@@ -19,7 +19,7 @@ that you cannot see — record your work in `docs/session-log.md` instead.
 | `terraform/modules/cloudsql-mysql/` | Cloud SQL module | Through `envs/dev` |
 | `terraform/envs/dev/` | Dev environment; **all settings in `dev.tfvars`** | PR → `terraform-plan` → merge → `dev` approval → `terraform-apply` |
 | `.github/workflows/` | `terraform-plan.yml` (PR), `terraform-apply.yml` (merge), `terraform-destroy.yml` (manual) | GitHub Actions |
-| `ansible/` | Phase 6, not started | — |
+| `ansible/` | Phase 6: in-database config (app databases, users, grants) for `mysql-dev`; see `ansible/README.md` | Leo runs it from srv-iac through the Cloud SQL Auth Proxy, after the PR is merged |
 | `docs/session-log.md` | One entry per working session | You update it |
 | `docs/runbook-powershell.md` | Everyday commands for Leo | Keep in sync when workflows change |
 
