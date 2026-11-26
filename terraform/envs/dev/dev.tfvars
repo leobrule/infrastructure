@@ -13,7 +13,7 @@ environment = "dev"
 # recreate appdb and its users afterwards). true: Terraform creates it again.
 # For a pause that keeps the data, leave this true and set
 # activation_policy = "NEVER" instead (you still pay for the disk).
-mysql_enabled = false
+mysql_enabled = true
 
 mysql = {
   name             = "mysql-dev"

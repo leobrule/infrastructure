@@ -17,6 +17,18 @@ Template:
 
 ---
 
+## 2026-11-26 — Phase 5 — mysql-dev turned back on
+
+- Done: PR #8 merged and applied (9 destroyed, no instances left). Then
+  `mysql_enabled = true` in `dev.tfvars` to deploy `mysql-dev` again.
+- PRs: #8 `dev: turn mysql-dev off` (merged); `dev: turn mysql-dev on` (open).
+- Plan result: 9 to add, 0 to change, 0 to destroy.
+- Cost impact: +9–14 USD/month (`db-f1-micro`) while on.
+- Risk: the name `mysql-dev` was deleted on 2026-11-25 18:29 UTC; Cloud SQL
+  may block reusing it for up to a week. If the apply fails on the name,
+  wait and rerun `terraform-apply` (the 2026-11-21 → 11-25 reuse worked).
+- Open: run the Ansible playbook from srv-iac once the instance is up.
+
 ## 2026-11-25 (later) — Phase 5 — mysql-dev turned off with the switch
 
 - Done: PR #7 merged and applied (9 added, `mysql-dev` RUNNABLE, MySQL 8.4,
