@@ -17,6 +17,16 @@ Template:
 
 ---
 
+## 2026-11-27 — Phase 5 — mysql-dev turned off again
+
+- Done: `mysql_enabled = false` in `dev.tfvars` to destroy `mysql-dev` (Leo's request).
+- PRs: `dev: turn mysql-dev off` (open).
+- Plan result: expected 0 to add, 0 to change, 9 to destroy (as in PR #8).
+- Cost impact: -9-14 USD/month (`db-f1-micro`); nothing billed while off.
+- Data: the instance, its databases and its automated backups are deleted.
+- Open: Cloud SQL Auth Proxy connection check still not done; needs the
+  instance on. Ansible playbook from srv-iac after the next turn-on.
+
 ## 2026-11-26 — Phase 5 — mysql-dev turned back on
 
 - Done: PR #8 merged and applied (9 destroyed, no instances left). Then
